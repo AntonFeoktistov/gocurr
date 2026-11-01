@@ -31,7 +31,10 @@ func main() {
 	currencyHandler := handlers.NewCurrencyHandler(currencyService)
 
 	mux.HandleFunc("GET /currencies", currencyHandler.List)
-
+	mux.HandleFunc("GET /currency/{code}", currencyHandler.GetByCode)
+	mux.HandleFunc("GET /currency/", func(w http.ResponseWriter, r *http.Request) {
+		handlers.WriteJSONError(w, http.StatusBadRequest, "Код валюты отсутствует в адресе")
+	})
 	srv := &http.Server{
 		Addr:              ":8080",
 		Handler:           loggingMiddleware(mux),

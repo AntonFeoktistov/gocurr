@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"fmt"
+	"gocurr/curr_errors"
 )
 
 type CurrencyRepo struct {
@@ -16,15 +16,17 @@ func NewCurrencyRepo(db *sql.DB) *CurrencyRepo {
 func (repo *CurrencyRepo) GetByCode(code string) (*Currency, error) {
 	var currency Currency
 	row := repo.db.QueryRow(`SELECT Id, Code, FullName, Sign FROM Currencies WHERE Code = ?`, code)
+
 	err := row.Scan(
 		&currency.ID, &currency.Code, &currency.Name, &currency.Sign,
 	)
 	if err == sql.ErrNoRows {
-		return nil, fmt.Errorf("currency not found: %s", code)
+		return nil, curr_errors.NewNotFoundError(code)
 	}
 	if err != nil {
-		return nil, err
+		return nil, curr_errors.NewInternalError(code)
 	}
+
 	return &currency, nil
 }
 
