@@ -15,7 +15,7 @@ import (
 func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /currencies", handlers.CurrenciesHandler)
-	mux.HandleFunc("GET /currencies", handlers.CurrenciesHandler)
+	mux.HandleFunc("GET /currency/{name}", handlers.CurrencyHandler)
 
 	srv := &http.Server{
 		Addr:              ":8080",
