@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"errors"
+	"gocurr/database"
 	"gocurr/handlers"
 	"gocurr/repository"
+	"gocurr/service"
 	"log"
 	"log/slog"
 	"net/http"
@@ -16,15 +18,19 @@ import (
 
 func main() {
 
-	db, err := repository.InitDB("./repository/currdb.sqlite")
+	db, err := database.InitDB("./database/currdb.sqlite")
 	if err != nil {
 		log.Fatalf("Не удалось инициализировать БД: %v", err)
 	}
 	defer db.Close()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /currencies", handlers.CurrenciesHandler)
-	mux.HandleFunc("GET /currency/{name}", handlers.CurrencyHandler)
+
+	currencyRepo := repository.NewCurrencyRepo(db)
+	currencyService := service.NewCurrencyService(currencyRepo)
+	currencyHandler := handlers.NewCurrencyHandler(currencyService)
+
+	mux.HandleFunc("GET /currencies", currencyHandler.List)
 
 	srv := &http.Server{
 		Addr:              ":8080",
