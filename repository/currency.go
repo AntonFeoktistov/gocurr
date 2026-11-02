@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"gocurr/curr_errors"
+	"strings"
 )
 
 type CurrencyRepo struct {
@@ -57,4 +58,35 @@ func (repo *CurrencyRepo) GetAll() ([]*Currency, error) {
 	}
 
 	return currencies, nil
+}
+
+func (repo *CurrencyRepo) CreateCurrency(name, code, sign string) (*Currency, error) {
+	var currency Currency
+
+	result, err := repo.db.Exec(
+		`INSERT INTO Currencies (Code, FullName, Sign) VALUES (?, ?, ?)`,
+		code, name, sign,
+	)
+	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, curr_errors.NewCurrencyAlreadyExistsError(code)
+		}
+		return nil, curr_errors.NewInternalError(err.Error())
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return nil, curr_errors.NewInternalError(err.Error())
+	}
+
+	row := repo.db.QueryRow(
+		`SELECT Id, Code, FullName, Sign FROM Currencies WHERE Id = ?`,
+		id,
+	)
+	err = row.Scan(&currency.ID, &currency.Code, &currency.Name, &currency.Sign)
+	if err != nil {
+		return nil, curr_errors.NewInternalError(err.Error())
+	}
+
+	return &currency, nil
 }
